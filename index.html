@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f7f2">
+  <meta name="description" content="可旋转的3D分子、中英对照和分步命名练习。Interactive 3D molecules and bilingual organic nomenclature lessons.">
+  <title>分子命名实验室 · Organic Naming Lab</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23243f35'/%3E%3Cpath d='M19 39L32 19l14 20' fill='none' stroke='%23d7edaa' stroke-width='5'/%3E%3Cg fill='%23e5f2c9'%3E%3Ccircle cx='19' cy='39' r='7'/%3E%3Ccircle cx='32' cy='19' r='8'/%3E%3Ccircle cx='46' cy='39' r='7'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./vendor/3Dmol-min.js"></script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到学习区 / Skip to lesson</a>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="分子命名实验室首页 / Organic Naming Lab home">
+      <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M10 28L20 10l11 18"/><circle cx="10" cy="28" r="4"/><circle cx="20" cy="10" r="5"/><circle cx="31" cy="28" r="4"/></svg></span>
+      <span><strong>分子命名实验室</strong><small>ORGANIC NAMING LAB</small></span>
+    </a>
+    <div class="header-meta"><span class="status-dot"></span><span>在观察中理解<small>LEARN BY EXPLORING</small></span></div>
+  </header>
+  <main id="main">
+    <section class="intro">
+      <div><div class="eyebrow">有机化学，立体地学 <span>CHEMISTRY IN A NEW DIMENSION</span></div><h1>看见结构，读懂名称<span>See the structure. Understand the name.</span></h1></div>
+      <div class="intro-note"><strong>旋转 · 观察 · 命名</strong><span>Rotate · Explore · Name</span><small id="course-count">7 章节 / Chapters · 47 分子 / Molecules</small></div>
+    </section>
+    <div id="load-error" class="load-error" role="alert" hidden></div>
+    <div class="workspace">
+      <aside class="sidebar" aria-label="课程与分子 / Lessons and molecules">
+        <div class="section-heading"><span class="section-number">01</span><h2>选择一课<small>YOUR LEARNING PATH</small></h2></div>
+        <label for="chapter-select" class="field-label">章节 / Chapter</label>
+        <select id="chapter-select"></select>
+        <p id="chapter-summary" class="bilingual-body compact"></p>
+        <label for="molecule-search" class="field-label search-label">查找分子 / Find a molecule</label>
+        <input id="molecule-search" type="search" placeholder="中文 / English / C₂H₆" autocomplete="off">
+        <div id="molecule-list" class="molecule-list"></div>
+        <details class="reference" id="reference-panel"><summary>命名速查 <span>Naming reference</span></summary><div id="reference-content"></div></details>
+      </aside>
+      <section class="model-column" aria-label="分子探索 / Molecular explorer">
+        <article class="model-card">
+          <div class="model-heading"><div><div id="family-tag" class="family-tag"></div><h2 id="molecule-title"></h2><p id="aliases"></p></div><div id="molecule-formula" class="molecule-formula"></div></div>
+          <div class="model-tabs" role="group" aria-label="模型表示方式 / Molecular representation">
+            <button id="ballstick" aria-pressed="true">球棍模型 <span>Ball & stick</span></button><button id="spacefill" aria-pressed="false">空间填充 <span>Space-filling</span></button>
+          </div>
+          <div class="canvas-shell">
+            <span class="canvas-label">3D <span>可交互模型 / INTERACTIVE MODEL</span></span>
+            <div id="viewer" aria-label="拖动旋转分子，滚动缩放 / Drag to rotate, scroll to zoom" role="img"></div>
+            <div id="viewer-message" role="status" hidden></div>
+            <div class="canvas-navigation" aria-label="视图操作 / View controls"><button id="zoom-in" aria-label="放大 / Zoom in">＋</button><button id="zoom-out" aria-label="缩小 / Zoom out">−</button><button id="reset-view" aria-label="重置视角 / Reset view">↺</button></div>
+            <div class="canvas-hint">拖动旋转 · 双指缩放 <span>Drag to rotate · Pinch to zoom</span></div>
+          </div>
+          <div class="model-controls" role="group" aria-label="显示选项 / Display options">
+            <button id="hydrogens-toggle" aria-pressed="true">显示氢 <span>Hydrogens</span></button><button id="numbers-toggle" aria-pressed="false">主链编号 <span>Numbering</span></button><button id="spin-toggle" aria-pressed="false">自动旋转 <span>Auto-rotate</span></button>
+          </div>
+          <div class="element-legend" id="element-legend" aria-label="元素颜色图例 / Element color legend"></div>
+          <div id="geometry-info" class="geometry-info" hidden></div>
+          <div id="isomer-switch" class="isomer-switch" hidden></div>
+        </article>
+        <article class="structure-card">
+          <div class="small-card-heading"><h3>从立体到平面 <span>3D → 2D</span></h3><span>同一个分子 / SAME MOLECULE</span></div>
+          <div id="condensed" class="condensed"></div>
+          <div id="structure" aria-label="二维结构与原子选择 / 2D structure and atom selection"></div>
+          <div class="highlight-legend"><span><i class="swatch primary"></i>当前步骤 / Current step</span><span><i class="swatch secondary"></i>支链或另一部分 / Branch or other part</span></div>
+          <div class="atom-section"><div class="field-label">点选一个原子 / Select an atom</div><div id="atom-list" class="atom-list"></div><div id="atom-info" class="atom-info" aria-live="polite"></div></div>
+        </article>
+        <details class="model-note" open><summary>关于这个模型 <span>About this model</span></summary><p id="lesson-note" class="bilingual-body"></p><p class="bilingual-body">这是计算得到的代表性构象，不是实时分子运动或唯一构象。<span>This is a calculated representative conformer, not a simulation or the only possible conformation.</span></p><p class="source-note">RDKit ETKDGv3 · MMFF94 / UFF · 3Dmol.js <span>本地模型，无在线查询 / Local models, no online queries</span></p></details>
+      </section>
+      <aside class="learning-column" aria-label="命名步骤与练习 / Naming steps and practice">
+        <article class="lesson-card"><div class="section-heading"><span class="section-number">02</span><h2>一步一步命名<small>BUILD THE NAME</small></h2></div><p class="card-intro">点一步，结构也跟着亮起来。<span>Follow a step. Watch the structure light up.</span></p><div id="step-list" class="step-list"></div><div class="step-detail"><div id="step-progress" class="step-progress"></div><h3 id="step-title"></h3><p id="step-text" class="bilingual-body"></p></div><div class="step-navigation"><button id="previous-step">上一步 <span>Previous</span></button><button id="next-step">下一步 <span>Next →</span></button></div></article>
+        <article class="quiz-card"><div class="section-heading"><span class="section-number">03</span><h2>轮到你试一试<small>CHECK YOUR UNDERSTANDING</small></h2></div><h3 id="quiz-prompt"></h3><div id="quiz-options" class="quiz-options" role="group" aria-label="答案选项 / Answer options"></div><button id="quiz-submit" class="primary-button" disabled>检查答案 <span>Check answer</span></button><div id="quiz-feedback" class="quiz-feedback" aria-live="polite"></div><button id="quiz-retry" class="text-button" hidden>再试一次 <span>Try again</span></button></article>
+        <article class="tip-card"><span class="tip-kicker">学习笔记 / FIELD NOTES</span><div id="chapter-tips"></div></article>
+      </aside>
+    </div>
+  </main>
+  <footer><span>先观察，再理解。<small>EXPLORATION BEFORE MEMORIZATION.</small></span><span>中英对照 · 47个分子<small>BILINGUAL · 47 MOLECULAR MODELS</small></span></footer>
+  <noscript><p>请启用JavaScript使用3D模型和互动课程。Enable JavaScript to use the 3D models and interactive lessons.</p></noscript>
+</body>
+</html>
