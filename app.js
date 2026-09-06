@@ -1,12 +1,12 @@
 import { createState, transition, activeMolecule } from './lesson.js';
 import { createMolecularViewer } from './viewer.js';
-import { createUI } from './ui.js';
-import { createPronunciation } from './pronunciation.js';
+import { createUI } from './ui.js?v=20260906-pronunciation';
+import { createPronunciation } from './pronunciation.js?v=20260906-pronunciation';
 
 const $ = id => document.getElementById(id);
 
 async function boot() {
-  const response = await fetch('./assets/molecules.json');
+  const response = await fetch('./assets/molecules.json?v=20260906-pronunciation');
   if (!response.ok) throw new Error(`Molecule data could not load (${response.status})`);
   const dataset = await response.json();
   let state = createState(dataset);

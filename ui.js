@@ -1,7 +1,7 @@
 import { activeMolecule, atomDetails, searchMolecules, stepSelection } from './lesson.js';
 import { formatFormula, gradeAnswer } from './quiz.js';
 import { elementColors } from './viewer.js';
-import { pronunciationTokens, characterReadings } from './pronunciation.js';
+import { pronunciationTokens, characterReadings } from './pronunciation.js?v=20260906-pronunciation';
 
 const $ = id => document.getElementById(id);
 const SVG_NS = 'http://www.w3.org/2000/svg';
