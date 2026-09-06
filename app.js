@@ -1,6 +1,7 @@
 import { createState, transition, activeMolecule } from './lesson.js';
 import { createMolecularViewer } from './viewer.js';
 import { createUI } from './ui.js';
+import { createPronunciation } from './pronunciation.js';
 
 const $ = id => document.getElementById(id);
 
@@ -12,10 +13,28 @@ async function boot() {
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let ui;
   let viewer;
+  const pronunciation = createPronunciation({
+    synth: window.speechSynthesis,
+    Utterance: window.SpeechSynthesisUtterance,
+    onStatus(status) {
+      const node = $('speech-status');
+      node.dataset.state = status.state;
+      node.dataset.code = status.code;
+      const zh = document.createElement('span');
+      const en = document.createElement('span');
+      zh.lang = 'zh-CN'; zh.textContent = status.message.zh;
+      en.lang = 'en'; en.textContent = status.message.en;
+      node.replaceChildren(zh, en);
+      $('speak-name').disabled = !status.supported;
+      $('speak-slow').disabled = !status.supported;
+      $('speech-stop').disabled = !['requested', 'speaking'].includes(status.state);
+    },
+  });
 
   function dispatch(action) {
     const previous = state;
     state = transition(state, action, dataset);
+    if (['chapter', 'molecule'].includes(action.type)) pronunciation.stop();
     const molecule = activeMolecule(dataset, state);
     ui.render(state, previous);
     if (previous.moleculeId !== state.moleculeId) viewer.load(molecule);
@@ -54,6 +73,8 @@ async function boot() {
   $('ballstick').addEventListener('click', () => dispatch({ type: 'representation', value: 'ballstick' }));
   $('spacefill').addEventListener('click', () => dispatch({ type: 'representation', value: 'spacefill' }));
   $('hydrogens-toggle').addEventListener('click', () => dispatch({ type: 'hydrogens', value: !state.showHydrogens }));
+  $('structure-expanded').addEventListener('click', () => dispatch({ type: 'hydrogens', value: true }));
+  $('structure-skeletal').addEventListener('click', () => dispatch({ type: 'hydrogens', value: false }));
   $('numbers-toggle').addEventListener('click', () => dispatch({ type: 'numbers', value: !state.showNumbers }));
   $('spin-toggle').addEventListener('click', () => dispatch({ type: 'spin', value: !state.spinning }));
   $('zoom-in').addEventListener('click', () => viewer.zoom(1.18));
@@ -61,7 +82,10 @@ async function boot() {
   $('reset-view').addEventListener('click', () => viewer.reset());
   $('quiz-submit').addEventListener('click', () => dispatch({ type: 'submit' }));
   $('quiz-retry').addEventListener('click', () => dispatch({ type: 'retry' }));
-  window.addEventListener('pagehide', () => viewer.dispose(), { once: true });
+  $('speak-name').addEventListener('click', () => pronunciation.speak(activeMolecule(dataset, state).name.en));
+  $('speak-slow').addEventListener('click', () => pronunciation.speak(activeMolecule(dataset, state).name.en, true));
+  $('speech-stop').addEventListener('click', () => pronunciation.stop());
+  window.addEventListener('pagehide', () => { pronunciation.dispose(); viewer.dispose(); }, { once: true });
   ui.render(state);
   viewer.load(activeMolecule(dataset, state));
   viewer.update(state);

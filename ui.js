@@ -1,6 +1,7 @@
 import { activeMolecule, atomDetails, searchMolecules, stepSelection } from './lesson.js';
 import { formatFormula, gradeAnswer } from './quiz.js';
 import { elementColors } from './viewer.js';
+import { pronunciationTokens, characterReadings } from './pronunciation.js';
 
 const $ = id => document.getElementById(id);
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -33,6 +34,7 @@ export function createUI(dataset, dispatch) {
   let lastChapterId = null;
   let searchQuery = '';
   let structureSvg = null;
+  let currentDepiction = null;
   const chapterSelect = $('chapter-select');
   for (const chapter of dataset.chapters) {
     const option = element('option', '', `${chapter.name.zh} / ${chapter.name.en}`);
@@ -75,20 +77,25 @@ export function createUI(dataset, dispatch) {
     }));
   }
 
-  function renderStructure(molecule) {
-    const parsed = new DOMParser().parseFromString(molecule.svg, 'image/svg+xml');
+  function renderStructure(molecule, state) {
+    const mode = state.showHydrogens ? 'expanded' : 'skeletal';
+    currentDepiction = molecule.depictions[mode];
+    const parsed = new DOMParser().parseFromString(currentDepiction.svg, 'image/svg+xml');
     structureSvg = document.importNode(parsed.documentElement, true);
-    structureSvg.setAttribute('viewBox', '0 0 600 360');
-    structureSvg.removeAttribute('width');
-    structureSvg.removeAttribute('height');
+    structureSvg.style.width = `${currentDepiction.width}px`;
+    structureSvg.style.height = `${currentDepiction.height}px`;
     structureSvg.setAttribute('role', 'group');
     structureSvg.setAttribute('aria-label', `${molecule.name.zh}二维结构 / ${molecule.name.en} 2D structure`);
-    structureSvg.append(svgElement('g', { class: 'selection-layer' }));
+    structureSvg.insertBefore(svgElement('g', { class: 'selection-layer' }), structureSvg.querySelector('.chemical-art'));
+    structureSvg.append(svgElement('g', { class: 'number-layer' }));
     const hitLayer = svgElement('g', { class: 'hit-layer' });
-    for (const atom of molecule.atoms.filter(item => item.xy)) {
+    const points = currentDepiction.positions;
+    for (const atom of molecule.atoms.filter(item => points[item.id])) {
+      const point = points[atom.id];
+      const nearest = Math.min(...Object.entries(points).filter(([id]) => Number(id) !== atom.id).map(([, other]) => Math.hypot(point[0] - other[0], point[1] - other[1])));
       const hit = svgElement('circle', {
-        class: 'atom-hit', cx: atom.xy[0], cy: atom.xy[1], r: 23,
-        'data-atom': atom.id, tabindex: '0', role: 'button',
+        class: 'atom-hit', cx: point[0], cy: point[1], r: Math.min(13, nearest * .4),
+        'data-atom': atom.id, 'data-element': atom.element, tabindex: '0', role: 'button',
         'aria-label': `${ELEMENTS[atom.element]}${atom.parentNumber ? ` · ${atom.parentNumber}` : ''}`,
       });
       hit.addEventListener('keydown', event => {
@@ -101,38 +108,56 @@ export function createUI(dataset, dispatch) {
     }
     structureSvg.append(hitLayer);
     $('structure').replaceChildren(structureSvg);
+    $('structure').dataset.mode = mode;
+    $('structure').scrollLeft = 0;
+    $('structure-expanded').setAttribute('aria-pressed', String(state.showHydrogens));
+    $('structure-skeletal').setAttribute('aria-pressed', String(!state.showHydrogens));
+    bilingual($('structure-description'), state.showHydrogens
+      ? { zh: '完整结构式：逐个显示C、H及其键。二维排布表示连接，不表示真实空间键角。', en: 'Displayed formula: every C, H and bond is shown. The 2D arrangement shows connectivity, not physical bond angles.' }
+      : { zh: '骨架式：端点和转角可表示碳，碳上的H被省略；OH、NH等必要标签保留。', en: 'Skeletal formula: endpoints and corners can represent carbon; carbon-bound H atoms are omitted. Necessary OH and NH labels remain.' });
   }
 
   function updateHighlights(molecule, state) {
     const layer = structureSvg.querySelector('.selection-layer');
     layer.replaceChildren();
     const selection = stepSelection(molecule, state.stepIndex);
-    const byId = new Map(molecule.atoms.map(atom => [atom.id, atom]));
+    const points = currentDepiction.positions;
+    const numberLayer = structureSvg.querySelector('.number-layer');
+    numberLayer.replaceChildren();
     for (const [ids, className] of [
       [selection.primary, 'atom-highlight'],
       [selection.secondary, 'atom-secondary'],
       [[state.selectedAtomId], 'atom-selected'],
     ]) {
       for (const id of ids) {
-        const atom = byId.get(id);
-        if (!atom?.xy) continue;
-        layer.append(svgElement('circle', { cx: atom.xy[0], cy: atom.xy[1], r: 20, class: className }));
+        const point = points[id];
+        if (!point) continue;
+        layer.append(svgElement('circle', { cx: point[0], cy: point[1], r: 12, class: className, 'data-atom-highlight': id }));
       }
     }
     if (state.showNumbers) {
-      for (const id of molecule.parent) {
-        const atom = byId.get(id);
+      for (const [index, id] of molecule.parent.entries()) {
+        const point = currentDepiction.numberPositions[id];
         const number = svgElement('text', {
-          x: atom.xy[0] + 12, y: atom.xy[1] - 20, class: 'atom-number',
+          x: point[0], y: point[1], class: 'atom-number',
+          'text-anchor': 'middle', 'dominant-baseline': 'central',
         });
-        number.textContent = atom.parentNumber;
-        layer.append(number);
+        number.textContent = index + 1;
+        numberLayer.append(number);
       }
     }
   }
 
   function renderMolecule(molecule, state) {
     bilingual($('molecule-title'), molecule.name);
+    const chineseName = $('molecule-title').querySelector('.zh');
+    chineseName.setAttribute('aria-label', molecule.name.zh);
+    chineseName.replaceChildren(...pronunciationTokens(molecule.name.zh).map(token => {
+      if (!token.pinyin) return document.createTextNode(token.text);
+      const ruby = element('ruby');
+      ruby.append(document.createTextNode(token.text), element('rt', '', token.pinyin));
+      return ruby;
+    }));
     bilingual($('family-tag'), molecule.family);
     $('molecule-formula').textContent = formatFormula(molecule.formula);
     $('condensed').textContent = molecule.condensed.replace(/([A-Za-z)])(\d+)/g, (_, prefix, digits) => prefix + formatFormula(digits));
@@ -172,7 +197,7 @@ export function createUI(dataset, dispatch) {
         isomerSwitch.append(button);
       }
     }
-    renderStructure(molecule);
+    renderStructure(molecule, state);
     const steps = $('step-list');
     steps.replaceChildren();
     for (const [index, step] of molecule.steps.entries()) {
@@ -207,6 +232,7 @@ export function createUI(dataset, dispatch) {
     }
     if (chapterChanged || moleculeChanged) moleculeList(state);
     if (moleculeChanged || chapterChanged) renderMolecule(molecule, state);
+    else if (previous?.showHydrogens !== state.showHydrogens) renderStructure(molecule, state);
     const step = molecule.steps[state.stepIndex];
     for (const button of document.querySelectorAll('.step-button')) {
       button.setAttribute('aria-current', Number(button.dataset.step) === state.stepIndex ? 'step' : 'false');
@@ -214,6 +240,10 @@ export function createUI(dataset, dispatch) {
     $('step-progress').textContent = `步骤 / STEP ${state.stepIndex + 1} OF ${molecule.steps.length}`;
     bilingual($('step-title'), step.title);
     bilingual($('step-text'), step.text);
+    const readings = characterReadings([molecule.name.zh, molecule.family.zh, ...molecule.groups.map(group => group.name.zh), step.title.zh, step.text.zh].join(''));
+    const readingLine = $('character-readings');
+    readingLine.replaceChildren(element('strong', '', '字音提示 / Character readings '), ...readings.map(reading => element('span', '', `${reading.character}（${reading.pinyin}）`)));
+    readingLine.hidden = readings.length === 0;
     $('previous-step').disabled = state.stepIndex === 0;
     $('next-step').disabled = state.stepIndex === molecule.steps.length - 1;
     for (const [id, active] of [

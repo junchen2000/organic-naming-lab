@@ -39,6 +39,7 @@
       </aside>
       <article class="model-card" aria-label="分子探索 / Molecular explorer">
           <div class="model-heading"><div><div id="family-tag" class="family-tag"></div><h2 id="molecule-title"></h2><p id="aliases"></p></div><div id="molecule-formula" class="molecule-formula"></div></div>
+          <div class="pronunciation-panel"><div class="speech-controls" role="group" aria-label="英文名称朗读 / English name pronunciation"><button id="speak-name">英文朗读 <span>Listen</span></button><button id="speak-slow">慢速朗读 <span>Slow</span></button><button id="speech-stop" disabled>停止 <span>Stop</span></button></div><p id="speech-status" class="speech-status" role="status" aria-live="polite"></p><p class="speech-note">系统语音示范，专业词发音可能因设备而异。<span>Device-generated speech; specialist pronunciations can vary.</span></p><p id="character-readings" class="character-readings"></p></div>
           <div class="model-tabs" role="group" aria-label="模型表示方式 / Molecular representation">
             <button id="ballstick" aria-pressed="true">球棍模型 <span>Ball & stick</span></button><button id="spacefill" aria-pressed="false">空间填充 <span>Space-filling</span></button>
           </div>
@@ -59,8 +60,12 @@
       <article class="lesson-card" aria-label="命名步骤 / Naming steps"><div class="section-heading"><span class="section-number">02</span><h2>一步一步命名<small>BUILD THE NAME</small></h2></div><p class="card-intro">点一步，结构也跟着亮起来。<span>Follow a step. Watch the structure light up.</span></p><div id="step-list" class="step-list"></div><div class="step-detail"><div id="step-progress" class="step-progress"></div><h3 id="step-title"></h3><p id="step-text" class="bilingual-body"></p></div><div class="step-navigation"><button id="previous-step">上一步 <span>Previous</span></button><button id="next-step">下一步 <span>Next →</span></button></div></article>
       <article class="structure-card" aria-label="二维结构与原子信息 / 2D structure and atom information">
           <div class="small-card-heading"><h3>从立体到平面 <span>3D → 2D</span></h3><span>同一个分子 / SAME MOLECULE</span></div>
+          <div class="structure-controls" role="group" aria-label="二维表示方式，与3D氢显示联动 / 2D notation linked to 3D hydrogens"><button id="structure-expanded" aria-pressed="true">完整结构式 <span>Displayed formula</span></button><button id="structure-skeletal" aria-pressed="false">骨架式 <span>Skeletal formula</span></button></div>
+          <p class="structure-link-note">与3D氢显示联动 <span>Linked to 3D hydrogen display</span></p>
+          <p id="structure-description" class="bilingual-body structure-description"></p>
           <div id="condensed" class="condensed"></div>
-          <div id="structure" aria-label="二维结构与原子选择 / 2D structure and atom selection"></div>
+          <div id="structure" tabindex="0" aria-label="二维结构，可左右滚动并选择原子 / 2D structure: scroll horizontally and select atoms"></div>
+          <p class="structure-scroll-hint">长结构可在图内左右滑动；点选原子可与3D对照。<span>Swipe inside a wide diagram; select an atom to link it with 3D.</span></p>
           <div class="highlight-legend"><span><i class="swatch primary"></i>当前步骤 / Current step</span><span><i class="swatch secondary"></i>支链或另一部分 / Branch or other part</span></div>
           <div class="atom-section"><div class="field-label">点选一个原子 / Select an atom</div><div id="atom-list" class="atom-list"></div><div id="atom-info" class="atom-info" aria-live="polite"></div></div>
       </article>
