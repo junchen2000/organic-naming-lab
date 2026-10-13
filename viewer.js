@@ -1,4 +1,4 @@
-import { stepSelection, validateViewerMapping } from './lesson.js';
+import { stepSelection, validateViewerMapping } from './lesson.js?v=20261012-oxygen-lessons';
 
 export const elementColors = {
   C: '#3e4b52', H: '#e5e8e6', N: '#3c6ecd', O: '#d75151',
@@ -59,7 +59,7 @@ export function createMolecularViewer(container, onSelect, onUnavailable) {
     }
   }
 
-  function update(state) {
+  function update(state, selection) {
     if (!available || !current) return;
     const molecule = current;
     const atomsById = new Map(molecule.atoms.map(atom => [atom.id, atom]));
@@ -76,7 +76,7 @@ export function createMolecularViewer(container, onSelect, onUnavailable) {
     });
     viewer.removeAllLabels();
     viewer.removeAllShapes();
-    const selected = stepSelection(molecule, state.stepIndex);
+    const selected = selection || stepSelection(molecule, state.stepIndex);
     const addHalo = (id, color, selection = false) => {
       const atom = atomsById.get(id);
       if (!atom || (!state.showHydrogens && atom.element === 'H')) return;
@@ -108,7 +108,7 @@ export function createMolecularViewer(container, onSelect, onUnavailable) {
         backgroundOpacity: .95, borderRadius: 4, padding: 4, inFront: true,
       }, undefined, true);
     }
-    if (molecule.geometry && state.stepIndex === 0 && state.showHydrogens) {
+    if (molecule.geometry && state.activity === 'naming' && state.stepIndex === 0 && state.showHydrogens) {
       const [a, center, b] = molecule.geometry.atoms.map(id => atomsById.get(id));
       const point = atom => ({ x: atom.xyz[0], y: atom.xyz[1], z: atom.xyz[2] });
       viewer.addLine({ start: point(a), end: point(center), color: '#91ad5d', linewidth: 3, dashed: true });

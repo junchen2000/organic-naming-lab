@@ -1,12 +1,12 @@
-import { createState, transition, activeMolecule } from './lesson.js';
-import { createMolecularViewer } from './viewer.js';
-import { createUI } from './ui.js?v=20260906-pronunciation-locants';
-import { createPronunciation } from './pronunciation.js?v=20260906-pronunciation-locants';
+import { createState, transition, displayedMolecule, activitySelection, drawingVisibility } from './lesson.js?v=20261012-oxygen-lessons';
+import { createMolecularViewer } from './viewer.js?v=20261012-oxygen-lessons';
+import { createUI } from './ui.js?v=20261012-oxygen-lessons';
+import { createPronunciation } from './pronunciation.js?v=20261012-oxygen-lessons';
 
 const $ = id => document.getElementById(id);
 
 async function boot() {
-  const response = await fetch('./assets/molecules.json?v=20260906-pronunciation-locants');
+  const response = await fetch('./assets/molecules.json?v=20261012-oxygen-lessons');
   if (!response.ok) throw new Error(`Molecule data could not load (${response.status})`);
   const dataset = await response.json();
   let state = createState(dataset);
@@ -34,15 +34,18 @@ async function boot() {
   function dispatch(action) {
     const previous = state;
     state = transition(state, action, dataset);
-    if (['chapter', 'molecule'].includes(action.type)) pronunciation.stop();
-    const molecule = activeMolecule(dataset, state);
+    const molecule = displayedMolecule(dataset, state);
+    if (displayedMolecule(dataset, previous).id !== molecule.id
+      || ['chapter', 'molecule', 'activity', 'reaction', 'participant'].includes(action.type)) pronunciation.stop();
     ui.render(state, previous);
-    if (previous.moleculeId !== state.moleculeId) viewer.load(molecule);
-    if (!['answer', 'submit', 'retry'].includes(action.type)) viewer.update(state);
+    if (displayedMolecule(dataset, previous).id !== molecule.id) viewer.load(molecule);
+    if (!['answer', 'submit', 'retry'].includes(action.type)) viewer.update(state, activitySelection(dataset, state));
   }
 
   ui = createUI(dataset, dispatch);
-  viewer = createMolecularViewer($('viewer'), id => dispatch({ type: 'selectAtom', id }), () => {
+  viewer = createMolecularViewer($('viewer'), id => {
+    if (drawingVisibility(dataset, state).visibleAtoms.includes(id)) dispatch({ type: 'selectAtom', id });
+  }, () => {
     const message = $('viewer-message');
     message.hidden = false;
     message.textContent = '此设备暂不能显示3D。下方二维结构、命名步骤与练习仍可使用。 / 3D is unavailable on this device. The 2D diagram, naming lessons and quizzes still work.';
@@ -59,6 +62,14 @@ async function boot() {
   $('chapter-select').addEventListener('change', event => dispatch({ type: 'chapter', id: event.target.value }));
   $('molecule-search').addEventListener('input', event => ui.search(event.target.value, state));
   document.addEventListener('click', event => {
+    const course = event.target.closest('[data-course]');
+    if (course) {
+      dispatch({ type: 'chapter', id: course.dataset.course });
+      dispatch({ type: 'molecule', id: course.dataset.courseMolecule });
+      return;
+    }
+    const participant = event.target.closest('[data-participant]');
+    if (participant) return dispatch({ type: 'participant', id: participant.dataset.participant });
     const molecule = event.target.closest('[data-molecule]');
     if (molecule instanceof HTMLButtonElement) return dispatch({ type: 'molecule', id: molecule.dataset.molecule });
     const step = event.target.closest('[data-step]');
@@ -68,6 +79,11 @@ async function boot() {
     const answer = event.target.closest('[data-answer]');
     if (answer && !answer.disabled) return dispatch({ type: 'answer', id: answer.dataset.answer });
   });
+  for (const activity of ['naming', 'drawing', 'reaction']) {
+    $(`activity-${activity}`).addEventListener('click', () => dispatch({ type: 'activity', value: activity }));
+  }
+  $('reaction-select').addEventListener('change', event => dispatch({ type: 'reaction', id: event.target.value }));
+  $('restart-lesson').addEventListener('click', () => dispatch({ type: 'step', index: 0 }));
   $('previous-step').addEventListener('click', () => dispatch({ type: 'step', index: state.stepIndex - 1 }));
   $('next-step').addEventListener('click', () => dispatch({ type: 'step', index: state.stepIndex + 1 }));
   $('ballstick').addEventListener('click', () => dispatch({ type: 'representation', value: 'ballstick' }));
@@ -82,13 +98,13 @@ async function boot() {
   $('reset-view').addEventListener('click', () => viewer.reset());
   $('quiz-submit').addEventListener('click', () => dispatch({ type: 'submit' }));
   $('quiz-retry').addEventListener('click', () => dispatch({ type: 'retry' }));
-  $('speak-name').addEventListener('click', () => pronunciation.speak(activeMolecule(dataset, state).name.en));
-  $('speak-slow').addEventListener('click', () => pronunciation.speak(activeMolecule(dataset, state).name.en, true));
+  $('speak-name').addEventListener('click', () => pronunciation.speak(displayedMolecule(dataset, state).name.en));
+  $('speak-slow').addEventListener('click', () => pronunciation.speak(displayedMolecule(dataset, state).name.en, true));
   $('speech-stop').addEventListener('click', () => pronunciation.stop());
   window.addEventListener('pagehide', () => { pronunciation.dispose(); viewer.dispose(); }, { once: true });
   ui.render(state);
-  viewer.load(activeMolecule(dataset, state));
-  viewer.update(state);
+  viewer.load(displayedMolecule(dataset, state));
+  viewer.update(state, activitySelection(dataset, state));
   document.body.dataset.ready = 'true';
 }
 

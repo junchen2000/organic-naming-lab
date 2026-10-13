@@ -3,6 +3,9 @@ const localDefaults = {
   selectedAtomId: null,
   quizAnswer: null,
   quizSubmitted: false,
+  activity: 'naming',
+  reactionId: null,
+  participantId: null,
 };
 
 const elementNames = {
@@ -52,6 +55,59 @@ export function activeMolecule(dataset, state) {
   return dataset.molecules.find((molecule) => molecule.id === state.moleculeId);
 }
 
+export function availableReactions(dataset, state) {
+  return (dataset.reactions || []).filter(reaction =>
+    reaction.participants.some(participant => participant.moleculeId === state.moleculeId));
+}
+
+export function activeReaction(dataset, state) {
+  const reaction = availableReactions(dataset, state).find(entry => entry.id === state.reactionId);
+  if (!reaction) throw new RangeError('Unknown reaction for this lesson');
+  return reaction;
+}
+
+export function displayedMolecule(dataset, state) {
+  if (state.activity !== 'reaction') return activeMolecule(dataset, state);
+  const participant = activeReaction(dataset, state).participants.find(entry => entry.id === state.participantId);
+  return dataset.molecules.find(molecule => molecule.id === participant.moleculeId);
+}
+
+export function activitySteps(dataset, state) {
+  if (state.activity === 'reaction') return activeReaction(dataset, state).steps;
+  const molecule = activeMolecule(dataset, state);
+  return state.activity === 'drawing' ? molecule.drawingFrames : molecule.steps;
+}
+
+export function activityQuiz(dataset, state) {
+  return state.activity === 'reaction' ? activeReaction(dataset, state).quiz : activeMolecule(dataset, state).quiz;
+}
+
+export function activitySelection(dataset, state) {
+  if (state.activity === 'naming') return stepSelection(activeMolecule(dataset, state), state.stepIndex);
+  const step = activitySteps(dataset, state)[state.stepIndex];
+  const selected = state.activity === 'reaction'
+    ? step.selections[state.participantId] || { highlight: [], secondary: [] }
+    : step;
+  const primary = [...new Set(selected.highlight)];
+  return { primary, secondary: [...new Set(selected.secondary)].filter(id => !primary.includes(id)) };
+}
+
+export function drawingVisibility(dataset, state) {
+  const molecule = displayedMolecule(dataset, state);
+  const frame = state.activity === 'drawing' ? activitySteps(dataset, state)[state.stepIndex] : null;
+  const allowed = new Set(frame ? frame.visibleAtoms : molecule.atoms.map(atom => atom.id));
+  const visibleAtoms = molecule.atoms.filter(atom => allowed.has(atom.id)
+    && (state.showHydrogens || atom.element !== 'H')).map(atom => atom.id);
+  const visible = new Set(visibleAtoms);
+  return {
+    visibleAtoms,
+    visibleBonds: molecule.bonds.filter(bond => visible.has(bond.a) && visible.has(bond.b))
+      .map(bond => [bond.a, bond.b]),
+    numbers: state.showNumbers || Boolean(frame?.numbers),
+    complete: !frame || state.stepIndex === molecule.drawingFrames.length - 1,
+  };
+}
+
 export function transition(state, action, dataset) {
   switch (action?.type) {
     case 'chapter': {
@@ -65,20 +121,45 @@ export function transition(state, action, dataset) {
       }
       return { ...state, ...localDefaults, moleculeId: action.id };
     }
+    case 'activity': {
+      if (!['naming', 'drawing', 'reaction'].includes(action.value)) throw new RangeError('Unknown activity');
+      const molecule = activeMolecule(dataset, state);
+      if (action.value === 'drawing' && !molecule.drawingFrames?.length) throw new RangeError('No drawing lesson');
+      const reaction = availableReactions(dataset, state)[0];
+      if (action.value === 'reaction' && !reaction) throw new RangeError('No reaction lesson');
+      return {
+        ...state, ...localDefaults, activity: action.value,
+        reactionId: action.value === 'reaction' ? reaction.id : null,
+        participantId: action.value === 'reaction' ? reaction.participants.find(part => part.moleculeId).id : null,
+      };
+    }
+    case 'reaction': {
+      const reaction = availableReactions(dataset, state).find(entry => entry.id === action.id);
+      if (state.activity !== 'reaction' || !reaction) throw new RangeError('Unknown reaction for this lesson');
+      return { ...state, stepIndex: 0, selectedAtomId: null, quizAnswer: null, quizSubmitted: false,
+        reactionId: reaction.id, participantId: reaction.participants.find(part => part.moleculeId).id };
+    }
+    case 'participant': {
+      const participant = activeReaction(dataset, state).participants.find(part => part.id === action.id);
+      if (state.activity !== 'reaction' || !participant?.moleculeId) throw new RangeError('Participant has no 3D model');
+      return { ...state, participantId: participant.id, selectedAtomId: null };
+    }
     case 'step': {
       if (!Number.isInteger(action.index)) throw new RangeError('Step index must be an integer');
-      const molecule = activeMolecule(dataset, state);
-      const stepIndex = Math.max(0, Math.min(action.index, molecule.steps.length - 1));
+      const stepIndex = Math.max(0, Math.min(action.index, activitySteps(dataset, state).length - 1));
       return { ...state, stepIndex, selectedAtomId: null };
     }
     case 'selectAtom':
-      if (action.id !== null) atomById(activeMolecule(dataset, state), action.id);
+      if (action.id !== null) {
+        atomById(displayedMolecule(dataset, state), action.id);
+        if (!drawingVisibility(dataset, state).visibleAtoms.includes(action.id)) throw new RangeError('Atom is not visible');
+      }
       return { ...state, selectedAtomId: action.id };
     case 'hydrogens': {
       const showHydrogens = booleanValue(action);
       let selectedAtomId = state.selectedAtomId;
       if (!showHydrogens && selectedAtomId !== null
-          && atomById(activeMolecule(dataset, state), selectedAtomId).element === 'H') {
+          && atomById(displayedMolecule(dataset, state), selectedAtomId).element === 'H') {
         selectedAtomId = null;
       }
       return { ...state, showHydrogens, selectedAtomId };
@@ -93,7 +174,7 @@ export function transition(state, action, dataset) {
     case 'spin':
       return { ...state, spinning: booleanValue(action) };
     case 'answer': {
-      const quiz = activeMolecule(dataset, state).quiz;
+      const quiz = activityQuiz(dataset, state);
       if (!quiz.options.some((option) => option.id === action.id)) {
         throw new RangeError('Unknown quiz option');
       }
