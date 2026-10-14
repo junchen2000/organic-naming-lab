@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2eee6">
+  <meta name="description" content="按Nelson Chemistry12第1.7节学习羧酸与酯：概念、记忆、命名和教材式逐笔结构图。">
+  <title>1.7 羧酸与酯 · 教材式学习页</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23293836'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-family='serif' font-size='26' fill='white'%3E1.7%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./section17.css?v=20261013-textbook">
+  <script type="module" src="./section17.js?v=20261013-textbook"></script>
+</head>
+<body>
+  <a class="skip" href="#learning">跳到学习区 / Skip to learning</a>
+  <header class="masthead"><a href="./" class="back-link">分子实验室 / Molecular lab</a><span>教材对齐 · 原创讲解与重绘</span></header>
+  <main id="section17-root">
+    <section class="hero">
+      <p class="eyebrow">NELSON CHEMISTRY 12 · SECTION 1.7</p>
+      <h1>羧酸与酯<span>Carboxylic Acids and Esters</span></h1>
+      <p>先看懂官能团，再拆名称，最后按教材格式一笔一笔画。</p>
+      <p id="source-status" class="source-status"></p>
+    </section>
+    <nav class="mode-tabs" aria-label="学习方式 / Learning modes">
+      <button data-mode="concepts" aria-pressed="true">概念<span>Understand</span></button>
+      <button data-mode="memory" aria-pressed="false">怎么记<span>Remember</span></button>
+      <button data-mode="naming" aria-pressed="false">看图命名<span>Name</span></button>
+      <button data-mode="drawing" aria-pressed="false">按名画图<span>Draw</span></button>
+      <button data-mode="quiz" aria-pressed="false">自测<span>Practice</span></button>
+    </nav>
+    <div id="load-error" role="alert" hidden></div>
+    <section id="learning" aria-label="教材学习区 / Textbook learning">
+      <div id="concepts-panel" class="card-grid"></div>
+      <div id="memory-panel" class="card-grid" hidden></div>
+      <section id="lesson-panel" class="lesson-panel" hidden>
+        <div class="lesson-toolbar">
+          <div><label for="lesson-select">选择例题 / Choose an example</label><select id="lesson-select"></select></div>
+          <div><label for="layout-select">书面表示 / Written format</label><select id="layout-select"></select></div>
+        </div>
+        <div class="lesson-heading"><p id="lesson-reference" class="eyebrow"></p><h2 id="lesson-title"></h2><p id="name-breakdown" class="bilingual"></p></div>
+        <div class="lesson-grid">
+          <article class="paper-card">
+            <div class="paper-topline"><strong>书面结构图 <span>Written structure</span></strong><button id="annotations-toggle" aria-pressed="true">显示讲解标记<span>Annotations</span></button></div>
+            <p id="draft-note" class="draft-note" hidden>书面绘图草稿，不是真实分子或反应中间体；先后顺序是书写顺序。</p>
+            <div id="paper" class="paper" tabindex="0" role="group" aria-label="书面结构图 / Written structure"></div>
+            <div id="pen-controls" class="paper-controls" hidden><button id="pen-previous">上一笔<span>Previous</span></button><button id="pen-next">下一笔<span>Next pen →</span></button><button id="pen-restart">重画<span>Restart</span></button></div>
+            <div id="naming-controls" class="paper-controls" hidden><button id="naming-previous">上一步<span>Previous</span></button><button id="naming-next">下一步<span>Next step →</span></button></div>
+            <div class="action-copy" aria-live="polite"><p id="action-progress"></p><h3 id="action-title"></h3><p id="action-text" class="bilingual"></p></div>
+            <p id="lesson-answer" class="lesson-answer" hidden></p>
+            <p id="formula-check" class="formula-check" hidden></p>
+          </article>
+          <aside class="method-card"><h3>先想清楚，再动笔<span>Reason before drawing</span></h3><div id="lesson-guide"></div><p class="method-note">同一个分子可以有不同等价画法；本页默认重绘对应例题的教材表示。羧基中的碳必须计入碳数。</p></aside>
+        </div>
+      </section>
+      <section id="quiz-panel" class="quiz-panel" hidden>
+        <label for="quiz-select">选择练习 / Choose a question</label><select id="quiz-select"></select>
+        <p id="quiz-reference" class="eyebrow"></p><h2 id="quiz-prompt"></h2>
+        <div id="quiz-paper" class="paper quiz-paper" tabindex="0" role="group" aria-label="练习结构图 / Question structure"></div>
+        <div id="quiz-options" class="quiz-options" role="group" aria-label="答案选项 / Answer options"></div>
+        <button id="quiz-submit" class="primary" disabled>检查答案<span>Check answer</span></button>
+        <div id="quiz-feedback" class="quiz-feedback" aria-live="polite"></div>
+        <button id="quiz-retry" hidden>再做一次<span>Try again</span></button>
+      </section>
+    </section>
+    <footer><p>基于指定教材的学习辅助，不替代教材；结构图与讲解由本项目原创生成。</p><div id="sources"></div></footer>
+  </main>
+  <noscript>请启用JavaScript使用逐笔画图和自测。Enable JavaScript for guided drawing and practice.</noscript>
+</body>
+</html>
